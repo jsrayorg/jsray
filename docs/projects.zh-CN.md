@@ -70,9 +70,9 @@ tag 附带的源码包，一概如此 —— 所以一个在 Core 发布当下�
 
 ## 仓库拆分
 
-| 仓库 | 交付形态 | 许可 | 状态 |
+| 仓库 | 交付形态 | 许可 | 今天从哪里拿到 |
 |---|---|---|---|
-| `jsray` | npm `@jsray/core` | MIT | 已公开 |
+| `jsray` | npm `@jsray/core` | MIT | npm —— `@jsray/core@0.0.2-beta.3` |
 | `jsray-wp` | WordPress.org 插件 | GPLv2 or later | GitHub Release 的 zip |
 | `jsray-terminal` | npm CLI | MIT | GitHub —— `npm i -g github:jsrayorg/jsray-terminal` |
 | `jsray-vscode` | VS Code Marketplace | MIT | GitHub Release 的 `.vsix` |
