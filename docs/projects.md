@@ -59,6 +59,19 @@ Platform plugins depend on Core. Core must not depend on platform plugins.
 
 Core changes flow into plugin repositories by copying or packaging `dist/` assets. Plugin changes should not require Core version changes unless they alter the Core API or assets.
 
+**An integration syncs Core as part of its own release, not when Core ships.**
+A vendored copy cannot follow Core in real time: every artifact freezes the
+snapshot it was built from — a `.vsix`, a plugin zip, and the source archive
+GitHub attaches to a tag alike — so a repository that re-syncs the moment Core
+publishes has aligned its source and nothing a user can install. Alignment is
+something a release does.
+
+So `tools/check-core-freshness.mjs` is advisory day to day and strict at the
+packaging gate: being behind between releases is reported, and nothing can be
+packaged from a stale engine (`--strict`, wired into each integration's build
+or packaging script). A security-grade Core release is the case that should not
+wait for the next feature release — cut the integration release for it.
+
 ## Repository Split
 
 | Repository | Intended channel | Licence | Available from today |
