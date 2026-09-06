@@ -118,6 +118,9 @@ jobs:
       - name: Validate version metadata
         run: npm run check:versions
 
+      - name: Check translated docs agree
+        run: npm run check:docs-parity
+
       - name: Run tests
         run: npm test
 
