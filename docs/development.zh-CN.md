@@ -252,14 +252,17 @@ CI:每个仓库都有 GitHub Actions(Node 18/20/22 矩阵;Core 另验 `dist/` �
   管线)跑 32 条断言。
 - **终端**:`--bg`(整底色绘制)、分页器集成与 `--core <path>` 覆盖在路线图上。
 - **用户侧 Core 锁定**(路线图):平台原生的更新控制已允许用户拒绝某班列车(WP 手动更新、VS Code 按扩展关自动更新 + 装历史版本、npm 版本锁定)。插件内的"Core 更新策略"(跟随/锁定/自定义文件)对 WP 与终端可行,对 VS Code 预览不可行(贡献点路径静态)。硬规则:锁定状态下遇到安全级 Core 更新必须显式警告——安全修复不允许被静默锁死。
-- **jsray-vscode / jsray-terminal**:分别于 2026-09-03 和 2026-09-05 公开,各自
-  的 Release 里都挂着可直接安装的构建。两者现已补齐 `jsray-wp` 在 2026-08-26/27
+- **jsray-vscode / jsray-terminal**:分别于 2026-09-03 和 2026-09-05 公开。
+  jsray-vscode 的 Release 里挂着可直接安装的 `.vsix`;jsray-terminal 还没有任何
+  Release,唯一的安装途径是 `npm i -g github:jsrayorg/jsray-terminal` —— tag 已
+  经在,随时可以据此切一个。两者现已补齐 `jsray-wp` 在 2026-08-26/27
   得到的那套机制 —— 三个集成的失效方式是同一种:`tools/sync-core-version.mjs` 自己推导 README 的
   Core 徽章,而不是留给"跑同步的那个人";`check:versions` **双向**校验徽章与阶段
   措辞 —— 正是"该出现的词在、不该出现的词也在"这一点,让「内部测试版 · 尚未发布
   公开测试版」在整个公开 beta 期间活了下来;以及插件的版本阶梯(`0.0.1-beta →
-  0.0.2-beta`,无计数器)而非 Core 的记法。两者均内置 Core `0.0.2-beta.1`,
-  同步到 `0.0.2-beta.2` 是下一步。
+  0.0.2-beta`,无计数器)而非 Core 的记法。两者均内置 Core `0.0.2-beta.1`,并且会
+  一直停在这里,直到各自切自己的发布:集成在发布时同步 Core,而不是 Core 一发布就
+  同步。规则本身与它唯一的例外写在 `docs/projects.md`。
 
 - **Core**:minify 刻意缺席(零构建);公开 beta 时再议。
 - **完全没有规则的字面量形式**(beta.5 审查时发现,因属"缺功能"而非"抢错范围"而推迟):

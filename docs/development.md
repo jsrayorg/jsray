@@ -403,7 +403,10 @@ deliberately deferred).
   warning when a security-grade Core update ships — security fixes are
   never silently pinnable.
 - **jsray-vscode / jsray-terminal**: both public since 2026-09-03 and
-  2026-09-05, each with a release carrying an installable build. They now
+  2026-09-05. jsray-vscode has a release carrying an installable `.vsix`;
+  jsray-terminal has no release yet, so the only way in is
+  `npm i -g github:jsrayorg/jsray-terminal` — a tag exists to cut one from.
+  They now
   carry what `jsray-wp` gained on 2026-08-26/27, because all three drift the
   same way:
   `tools/sync-core-version.mjs` deriving the README Core badge instead of
@@ -412,7 +415,9 @@ deliberately deferred).
   the right one is what let "Internal test build · no public beta yet" survive
   the whole public beta; and the plugin version ladder (`0.0.1-beta →
   0.0.2-beta`, no counter) rather than Core's. Both bundle Core
-  `0.0.2-beta.1`; syncing them to `0.0.2-beta.2` is the next step.
+  `0.0.2-beta.1`, and stay there until each cuts its own release: an
+  integration syncs Core as part of releasing, not when Core ships. The rule
+  and its one exception are in `docs/projects.md`.
 
 - **Core**: minification is deliberately absent (zero-build); revisit at
   public beta.
