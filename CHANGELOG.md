@@ -7,6 +7,41 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`check:docs-parity`.** Every document here is written twice, and nothing
+  checked that the two agreed. The check compares what cannot legitimately
+  differ between translations — versions, paths, package specifiers, links,
+  section structure, table row counts — and leaves prose, sentence counts and
+  translated placeholders alone. It is wired into CI beside `check:versions`.
+
+### Fixed
+
+- **The Chinese docs said less than the English ones.** The Core sync rule
+  merged in #22 existed only in English; the Chinese repository table was
+  headed 状态 and answered a different question than the English column, while
+  the sentence under it explained the English one; and the versioning doc
+  dropped the npm account the package publishes from.
+
+- **The roadmap described jsray-terminal as having a release.** It has none —
+  the only way in is the GitHub install line. It also carried "syncing them to
+  0.0.2-beta.2 is the next step", written when Core was on beta.2 and wrong in
+  two ways since: it named a superseded release, and an integration syncs Core
+  as part of its own release, so being behind between releases is the expected
+  state rather than a queued chore.
+
+### Changed
+
+- **Two deadlines became conditions.** "Revisit at public beta" named
+  2026-07-17; that date passed and the entry became something every planning
+  round rediscovered and re-argued. Minification now carries its answer — a
+  readable, auditable `dist/` is worth more than the 9 KB brotli saves, and
+  the comments are 31% of the file — together with a trigger that cannot
+  expire: a real size complaint, or Core growing substantially. Detection
+  tuning no longer "belongs with the 0.0.2 engine work" while we are inside
+  0.0.2; it needs a beta round of its own, because retuning the scores
+  reorders all 83 grammars at once.
+
 ## [0.0.2-beta.3] — 2026-09-06
 
 Documentation and the guards around it. No runtime change: `dist/` differs from
