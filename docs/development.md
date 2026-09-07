@@ -419,8 +419,18 @@ deliberately deferred).
   integration syncs Core as part of releasing, not when Core ships. The rule
   and its one exception are in `docs/projects.md`.
 
-- **Core**: minification is deliberately absent (zero-build); revisit at
-  public beta.
+- **Core**: minification is deliberately absent, and that is a decision now
+  rather than a pending one. Stripping comments and indentation takes the
+  brotli transfer from 23.9 KB to 14.8 KB — 9 KB is a real saving, and the
+  comments alone are 31% of the file, written for maintainers and downloaded
+  by every visitor. What it buys against that is a second artifact travelling
+  the whole chain — `integrity.json`, the three bundled snapshots, the
+  `/v/<version>/` paths, the SRI examples in both READMEs — and a new way for
+  a release to ship corrupted. A `dist/` a user can read and audit against its
+  digest is worth more than 9 KB today. Reopen this on a real size complaint
+  or a substantial growth in Core, not at a version number: "revisit at public
+  beta" named 2026-07-17, a date that passed, after which the entry sat here
+  being rediscovered as an open question every planning round.
 - **Literal forms with no rule** (found while auditing for beta.5, deferred
   because they are absent features rather than wrong spans): heredocs —
   `<<<EOT` in PHP, `<<~EOT` in Ruby, `<<EOF` in shell — plus Ruby `%w[]` and
@@ -434,7 +444,7 @@ deliberately deferred).
   snippets it misreads Go's `func f(x int) int` as Swift and a shell
   `x=1; echo "$x"` as PHP, and returns empty for short C#, Kotlin and TOML.
   Retuning the scores changes the relative ranking of all 83 grammars at
-  once, so it needs its own corpus and belongs with the 0.0.2 engine work —
+  once, so it needs its own corpus and a beta round of its own —
   the failure is mild (usually plain text) and only reachable when the caller
   supplies no language, which the integrations normally do.
 - **Cosmetic, deliberately left**: a literal prefix that sits outside its
