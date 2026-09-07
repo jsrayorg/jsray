@@ -9,6 +9,30 @@ versioning follows [SemVer](https://semver.org/).
 
 ### Added
 
+- **Literals whose end is decided at runtime.** A grammar rule may now carry
+  `close`, a function that receives the opening match and reports where the
+  form ends. Two builders cover everything the grammars needed: a heredoc ends
+  at the word its own opening line named — `<<<SQL` at SQL — and a
+  delimiter-chosen literal ends at whatever closes the character it opened
+  with, counting depth where brackets nest. Neither is expressible as a
+  RegExp, which is why these rendered as ordinary code until now:
+  - heredoc and nowdoc in **PHP**, including an indented closing word and a
+    `;` after it;
+  - heredoc in **shell**, with `<<-` permitting an indented terminator, and
+    the redirect on an opening line (`cat <<EOF > out.txt`) left as shell
+    rather than pulled into the literal;
+  - heredoc in **Ruby** (`<<~`, `<<-`, plain `<<`), on uppercase words only,
+    so `items << thing` stays the append operator;
+  - `%w[]`, `%i()`, `%q{}`, `%Q<>` and `%r{}` in **Ruby**, `q{}`, `qq{}`,
+    `qw()` and `qr{}` in **Perl**, and `~s{}`, `~w[]`, `~r//` sigils in
+    **Elixir** — each nesting correctly through inner brackets, and each
+    holding a `#` without it becoming a comment.
+
+  An opening whose terminator never arrives reports no match, leaving the text
+  to the rules behind it. A false opening is likelier than a genuinely
+  unterminated literal, and the alternative is a stray `<<` swallowing the
+  rest of the file.
+
 - **`check:docs-parity`.** Every document here is written twice, and nothing
   checked that the two agreed. The check compares what cannot legitimately
   differ between translations — versions, paths, package specifiers, links,

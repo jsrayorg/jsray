@@ -336,6 +336,13 @@ test('every new string form stays linear on pathological input', () => {
     ['cpp', '0x1p'.repeat(10000)],              // hex exponent storm
     ['go', '1' + '_'.repeat(20000)],            // separator storm
     ['ruby', '=begin\n'.repeat(5000)],          // unterminated block comments
+    // Runtime terminators scan forward from each opening. An opening that
+    // never closes makes that scan reach the end of the input, so a file of
+    // nothing but openings is the shape that would expose a quadratic one.
+    ['shell', 'cat <<EOF\n'.repeat(4000)],
+    ['php', '<<<EOT\n'.repeat(4000)],
+    ['ruby', '%w[' .repeat(8000)],
+    ['perl', 'q{'.repeat(8000)],
   ];
 
   for (const [lang, code] of shapes) {
@@ -351,4 +358,97 @@ test('every new string form stays linear on pathological input', () => {
         `new pattern for alternatives that can match the same input two ways`
     );
   }
+});
+
+// ── Forms whose end is decided at runtime ──────────────────────────────────
+// A heredoc ends at the word its own opening named; a %w[…] ends at the
+// bracket matching its opener. Neither is expressible as a RegExp, so both
+// rendered as ordinary code until `close` existed. The cases that matter are
+// the ones where the body holds characters another rule wants: `#`, `//`, a
+// quote, a brace.
+
+test('shell: a heredoc body is one string, and its # is not a comment', () => {
+  const code = 'cat <<EOF\nhello "world" # not a comment\nEOF\necho done';
+
+  token(code, 'shell', 'string', 'hello "world" # not a comment\nEOF');
+  token(code, 'shell', 'fn-builtin', 'echo');
+});
+
+test('shell: a redirect on the opening line stays shell', () => {
+  const code = 'cat <<EOF > out.txt\nbody\nEOF';
+
+  // The opening line is consumed as an uncolored prefix precisely so that
+  // `> out.txt` is not dragged into the literal.
+  notSwallowed(code, 'shell', 'string', '> out.txt');
+  token(code, 'shell', 'operator', '>');
+});
+
+test('shell: <<- permits an indented terminator, << does not', () => {
+  token('cat <<-END\n\tbody\n\tEND\n', 'shell', 'string', '\tbody\n\tEND');
+
+  // Plain `<<` requires the word at column zero; an indented one is not a
+  // terminator, and with none present the form declines rather than running on.
+  const indented = 'cat <<END\n\tbody\n\tEND\n';
+  const strings = leaves(JSRay.tokenize(indented, 'shell')).filter((t) => t.type === 'tk-string');
+  assert.equal(strings.length, 0, `expected no string, got ${JSON.stringify(strings)}`);
+});
+
+test('shell: an arithmetic shift does not open a heredoc', () => {
+  const code = 'echo $(( a << 2 ))';
+  const strings = leaves(JSRay.tokenize(code, 'shell')).filter((t) => t.type === 'tk-string');
+
+  assert.equal(strings.length, 0, `<< opened a literal: ${JSON.stringify(strings)}`);
+});
+
+test('PHP: a heredoc holds // and closes on an indented word', () => {
+  const code = '<?php\n$sql = <<<SQL\n  SELECT 1; // not a comment\n  SQL;\n';
+
+  token(code, 'php', 'string', '  SELECT 1; // not a comment\n  SQL');
+  notSwallowed(code, 'php', 'comment', 'SELECT 1');
+});
+
+test('PHP: a nowdoc is a string like any other', () => {
+  const code = "<?php\n$raw = <<<'EOT'\n\$notInterpolated\nEOT;\n";
+
+  token(code, 'php', 'string', '$notInterpolated\nEOT');
+});
+
+test('Ruby: <<~ opens a heredoc, << on a lowercase word does not', () => {
+  token('sql = <<~SQL\n  SELECT 1\nSQL\n', 'ruby', 'string', '  SELECT 1\nSQL');
+
+  // `items << thing` is the append operator and must stay one.
+  const append = 'items << thing';
+  const strings = leaves(JSRay.tokenize(append, 'ruby')).filter((t) => t.type === 'tk-string');
+  assert.equal(strings.length, 0, `append became a literal: ${JSON.stringify(strings)}`);
+});
+
+test('Ruby: %w and %q close on the matching bracket, and nest', () => {
+  token('a = %w[one two three]', 'ruby', 'string', '%w[one two three]');
+  token('c = %q{outer {inner} still}', 'ruby', 'string', '%q{outer {inner} still}');
+  token('d = %r{^\\d+$}', 'ruby', 'regex', '%r{^\\d+$}');
+});
+
+test('Ruby: modulo is not a percent literal', () => {
+  const code = 'e = x % y';
+  const strings = leaves(JSRay.tokenize(code, 'ruby')).filter((t) => t.type === 'tk-string');
+
+  assert.equal(strings.length, 0, `modulo became a literal: ${JSON.stringify(strings)}`);
+});
+
+test('Perl: q{} holds a # without becoming a comment', () => {
+  const code = 'my $s = q{hello # not comment};';
+
+  token(code, 'perl', 'string', 'q{hello # not comment}');
+  notSwallowed(code, 'perl', 'comment', 'not comment');
+  token('my @w = qw(a b c);', 'perl', 'string', 'qw(a b c)');
+  token('my $r = qr{^\\d+};', 'perl', 'regex', 'qr{^\\d+}');
+});
+
+test('Elixir: a sigil carries its own delimiters', () => {
+  token('a = ~w[one two]', 'elixir', 'string', '~w[one two]');
+  token('b = ~r/^\\d+/', 'elixir', 'regex', '~r/^\\d+/');
+
+  const code = 'c = ~s{hi # not comment}';
+  token(code, 'elixir', 'string', '~s{hi # not comment}');
+  notSwallowed(code, 'elixir', 'comment', 'not comment');
 });

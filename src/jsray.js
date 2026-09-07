@@ -23,7 +23,17 @@
    *   { cls: 'tk-xxx',
    *     pattern: /re/,         // must be globalizable; the 'g' flag is forced internally
    *     inside?: rules,        // nested grammar (recursively tokenize captured text)
-   *     lookbehind?: true }    // capture group 1 is consumed as prefix but not colored
+   *     lookbehind?: true,     // capture group 1 is consumed as prefix but not colored
+   *     close?: fn }           // pattern matches the opening only; fn finds the end
+   *
+   * `close(match, text, from) -> index | -1` exists for the forms whose end is
+   * not knowable when the rule is written. A heredoc ends at the word its own
+   * opening line named — `<<<EOT` at EOT, `<<<SQL` at SQL — and `%w[…]` ends
+   * at the bracket matching the one that opened it. No single RegExp can say
+   * that, which is why these forms rendered as ordinary code until now.
+   * Returning -1 means "no terminator here": the opening is left to the rules
+   * behind this one rather than swallowing the rest of the file, because a
+   * false opening is likelier than a genuinely unterminated literal.
    */
   function tokenize(code, rules) {
     let stream = [code];
@@ -43,7 +53,12 @@
         while ((m = re.exec(piece)) !== null) {
           const lbLen = rule.lookbehind && m[1] ? m[1].length : 0;
           const start = m.index + lbLen;
-          const text = m[0].slice(lbLen);
+          let text = m[0].slice(lbLen);
+          if (rule.close) {
+            const end = rule.close(m, piece, m.index + m[0].length);
+            if (end < 0) { re.lastIndex = m.index + 1; continue; }
+            text = piece.slice(start, end);
+          }
           if (!text) { re.lastIndex++; continue; }
           if (start > last) next.push(piece.slice(last, start));
           next.push({
@@ -51,6 +66,9 @@
             content: rule.inside ? tokenize(text, rule.inside) : text,
           });
           last = start + text.length;
+          // The body of a close-delimited form has already been consumed;
+          // resuming inside it would re-match its own contents.
+          if (rule.close) re.lastIndex = last;
         }
         if (last < piece.length) next.push(piece.slice(last));
       }
@@ -73,6 +91,60 @@
   // ============================================================
 
   const G = {}; // grammars
+
+  // ---------- runtime terminators ----------
+  // Two `close` builders cover every delimited form the grammars below need.
+  // Both take the opening match and report where the form ends.
+
+  /**
+   * A heredoc ends at the word its opening line named. `nameGroup` is the
+   * capture holding that word; `indentGroup` is the capture holding the `-` or
+   * `~` that permits an indented terminator (pass `true` where the language
+   * always permits one, as PHP does since 7.3). `trailing` overrides what may
+   * follow the word on its closing line.
+   *
+   * The name is interpolated into a RegExp, which is only safe because every
+   * opening pattern here restricts it to `[A-Za-z_]\w*` — no metacharacters
+   * can reach this.
+   */
+  function heredocEnd(nameGroup, indentGroup, trailing) {
+    return (m, text, from) => {
+      const name = m[nameGroup];
+      if (!name) return -1;
+      const indented = indentGroup === true ? true : !!m[indentGroup];
+      const re = new RegExp(
+        '^' + (indented ? '[ \\t]*' : '') + name + (trailing || '[ \\t]*$'),
+        'm'
+      );
+      const hit = re.exec(text.slice(from));
+      return hit ? from + hit.index + hit[0].length : -1;
+    };
+  }
+
+  const CLOSERS = { '(': ')', '[': ']', '{': '}', '<': '>' };
+
+  /**
+   * A delimiter-chosen literal — Ruby's `%w[…]`, Perl's `q{…}`, an Elixir
+   * sigil — ends at whatever closes the character it opened with. Bracket
+   * pairs nest; a symmetric delimiter such as `%w!…!` cannot, and counting
+   * depth on one would end the literal at its own opening character.
+   */
+  function pairedEnd(openGroup) {
+    return (m, text, from) => {
+      const open = m[openGroup];
+      if (!open) return -1;
+      const close = CLOSERS[open] || open;
+      const nests = close !== open;
+      let depth = 1;
+      for (let i = from; i < text.length; i++) {
+        const c = text[i];
+        if (c === '\\') { i++; continue; }
+        if (nests && c === open) depth++;
+        else if (c === close && --depth === 0) return i + 1;
+      }
+      return -1;
+    };
+  }
 
   // ---------- shared fragments ----------
   const RX = {
@@ -386,6 +458,15 @@
     'docker kubectl python python3 pip pip3 ruby go cargo make brew apt yum';
 
   G.shell = [
+    // Heredocs first: their body may hold quotes and `#`, and every rule
+    // after this one would claim those. The opening line is group 1 and is
+    // consumed as an uncolored prefix, so `cat <<EOF > out.txt` keeps its
+    // redirect as shell rather than dragging it into the literal.
+    { cls: 'tk-string',
+      pattern: /(<<(-?)[ \t]*(['"]?)([A-Za-z_]\w*)\3[^\n]*\n)/,
+      lookbehind: true,
+      close: heredocEnd(4, 2) },
+
     // Strings before comments, else # inside "..." is eaten as a comment.
     // Each `$` form is matched exactly, never by a greedy run that could also
     // swallow the ones after it — the old `\$[\w{][^"\n]*` overlapped itself
@@ -431,6 +512,15 @@
   ).split(' ');
 
   G.php = [
+    // Heredoc and nowdoc ahead of the comment rules: `#` and `//` are
+    // ordinary text inside one. The closing word may be indented and may be
+    // followed by `;` or `,`, which is why the terminator ends at a word
+    // boundary rather than at end of line.
+    { cls: 'tk-string',
+      pattern: /(<<<[ \t]*(['"]?)([A-Za-z_]\w*)\2\r?\n)/,
+      lookbehind: true,
+      close: heredocEnd(3, true, '\\b') },
+
     // Block comments before strings; line comments (// and #) after strings
     // so "https://..." and "#anchor" inside strings never become comments.
     { cls: 'tk-comment', pattern: /\/\*[\s\S]*?\*\// },
@@ -732,12 +822,32 @@
   const RB_BUILTINS = 'puts print p gets raise lambda proc loop each map select reject reduce new'.split(' ');
 
   G.ruby = [
+    // Heredocs, and only with an uppercase word: `<<` is also the append
+    // operator, and `items << thing` must not open one. An uppercase name is
+    // the convention, and where a constant does follow `<<` the terminator
+    // line will not exist, so the form declines itself rather than eating the
+    // file. `<<~` and `<<-` permit an indented terminator; plain `<<` does not.
+    { cls: 'tk-string',
+      pattern: /(<<([-~]?)(['"]?)([A-Z_]\w*)\3[^\n]*\n)/,
+      lookbehind: true,
+      close: heredocEnd(4, 2) },
+
     // `=begin` / `=end` blocks come before the strings that come before
     // everything else. The markers are only special at column zero, so the
     // anchors here are load-bearing rather than decorative. Without this rule
     // a documentation block was read as ordinary code — the body's words came
     // out coloured as function calls and keywords.
     { cls: 'tk-comment', pattern: /^=begin\b[\s\S]*?^=end.*$/m },
+
+    // %w[…] %i(…) %q{…} %Q<…>: the delimiter is picked at the call site, so
+    // the closer is only knowable once the opener has been read, and bracket
+    // pairs nest. %r is a regex, not a string. The bare `%(…)` form is left
+    // out on purpose — it cannot be told from the modulo operator without
+    // parsing, and it is rare enough not to be worth mistaking `a %(b)` for a
+    // literal.
+    { cls: 'tk-regex',  pattern: /%r([([{<|!\/])/, close: pairedEnd(1) },
+    { cls: 'tk-string', pattern: /%[wWiIqQsx]([([{<|!\/])/, close: pairedEnd(1) },
+
     // Strings must come before comments, else # inside "..." (incl. #{} interpolation)
     // is eaten as a comment. String bodies stay single-line so an unpaired quote
     // in a comment can't swallow following lines.
@@ -921,6 +1031,13 @@
         { cls: 'tk-var', pattern: /[$@][A-Za-z_]\w*/ },
     ]},
     { cls: 'tk-string', pattern: /'(?:\\.|[^'\\\n])*'/ },
+
+    // q{…} qq{…} qw{…} qr{…} — ahead of the comment rule, because `#` is
+    // ordinary text inside one. `/` is excluded as a delimiter for the
+    // quoting forms: after a bare word it is far more often division.
+    { cls: 'tk-regex',  pattern: /\bqr[ \t]*([([{<|!\/])/, close: pairedEnd(1) },
+    { cls: 'tk-string', pattern: /\b(?:qq|qw|q)[ \t]*([([{<|!])/, close: pairedEnd(1) },
+
     { cls: 'tk-comment', pattern: /#.*/ },
     { cls: 'tk-regex', pattern: /((?:=~|!~)\s*)(?:m|s|tr|y)?\/(?:\\.|[^/\n])*\/[a-z]*/, lookbehind: true },
     { cls: 'tk-var-builtin', pattern: /\$[_0-9&`'+^!]|\$\^\w|\@ARGV\b|\%ENV\b|\$0\b/ },
@@ -983,6 +1100,14 @@
         { cls: 'tk-operator', pattern: /#\{[^}\n]*\}/ },
     ]},
     { cls: 'tk-string', pattern: /'(?:\\.|[^'\\\n])*'/ },
+
+    // Sigils ~s{…} ~w[…] ~r/…/, ahead of the comment rule for the same reason
+    // the strings are. A `"` delimiter is not accepted here: it would end
+    // `~s"""…"""` at the second quote, and the triple-quote rule above
+    // already renders that form correctly.
+    { cls: 'tk-regex',  pattern: /~[rR]([([{<|\/'])/, close: pairedEnd(1) },
+    { cls: 'tk-string', pattern: /~[a-zA-Z]([([{<|\/'])/, close: pairedEnd(1) },
+
     { cls: 'tk-comment', pattern: /#.*/ },
     { cls: 'tk-decorator', pattern: /@[a-z_]\w*/ },
     { cls: 'tk-var-const', pattern: /:[a-z_]\w*[?!]?/ },

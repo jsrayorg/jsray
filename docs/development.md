@@ -431,13 +431,13 @@ deliberately deferred).
   or a substantial growth in Core, not at a version number: "revisit at public
   beta" named 2026-07-17, a date that passed, after which the entry sat here
   being rediscovered as an open question every planning round.
-- **Literal forms with no rule** (found while auditing for beta.5, deferred
-  because they are absent features rather than wrong spans): heredocs —
-  `<<<EOT` in PHP, `<<~EOT` in Ruby, `<<EOF` in shell — plus Ruby `%w[]` and
-  `%q()`, Perl `q{}` and `qq{}`, and Elixir sigils. Each renders its body as
-  ordinary code today. Haskell's nested `{- {- -} -}` comments close at the
-  first inner terminator and cannot be fixed with a flat pattern at all; they
-  need the same nesting support embedded languages will need.
+- **Nested block comments** are what remains of the literal forms audited for
+  beta.5. Haskell's `{- {- -} -}` closes at the first inner terminator: the
+  outer comment ends early and the rest of the line is read as code. A flat
+  pattern cannot count depth, and `close` does not help here either — the
+  opener carries no information about its own end, which is exactly what a
+  heredoc's does. It needs the nesting support embedded languages will need
+  anyway, so the two belong in one round.
 - **Language detection tuning** (audited for beta.5, deferred): detection is
   correct on all 22 realistic multi-line samples, and correctly returns empty
   for prose, digits and single words rather than guessing. On one-line
@@ -451,8 +451,12 @@ deliberately deferred).
   string — `@"…"` and `$"…"` in C#, `r"…"` in Rust, `#"…"#` in Swift, `s"…"`
   in Scala — and the sign in a CSS `-1.5em` or the leading dot in JavaScript's
   `.5`. The literal is coloured; one character in front of it is not.
-- **The string rules themselves** are hand-written once per grammar family
-  without encoding a terminator model, which is what produced every fix in
-  beta.5. Rewriting them onto one builder changes the shape of the objects in
-  `languages`, which is a declared public type, so it waits for the API pass in
-  0.0.2. `tests/constructs.test.mjs` is what guards the behaviour until then.
+- **The string rules themselves** are still hand-written once per grammar
+  family without encoding a terminator model, which is what produced every fix
+  in beta.5. What changed in beta.4 is that a terminator can now be computed
+  at match time (`close`), which is what the delimited forms needed; the rules
+  that were already working were left where they are. Migrating them onto one
+  builder is the remaining half, and it does change the shape of the objects
+  in `languages` — a declared public type, so it belongs in a beta round of
+  its own inside the 0.0.x window rather than riding along with unrelated
+  work. `tests/constructs.test.mjs` is what guards the behaviour until then.
