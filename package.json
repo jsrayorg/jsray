@@ -47,6 +47,7 @@
   "scripts": {
     "build": "sh build.sh",
     "check:versions": "node tools/check-versions.mjs",
+    "check:docs-parity": "node tools/check-docs-parity.mjs",
     "test": "node --test tests/*.mjs",
     "demo": "echo 'Open demo/index.html in a browser, or serve the project root and visit /demo/'",
     "sync:integrations": "sh tools/sync-integrations.sh",

@@ -155,6 +155,7 @@ Every change lands the same way:
 git checkout -b my-change
 # ... work, then:
 npm test && node tools/check-versions.mjs && node tools/integrity.mjs --check
+npm run check:docs-parity   # if the change touched a document
 git push origin my-change
 gh pr create --fill
 ```
@@ -164,6 +165,11 @@ merge; the branch also has to be up to date with `main`.
 
 - One PR per concern, to keep reviews easy.
 - Engine or grammar changes must come with added / updated tests.
+- Every document here is written twice, as `X.md` and `X.zh-CN.md`. Both
+  translations belong in the same pull request: a rule that exists in one
+  language is a rule half the readers never see, and it reads perfectly well
+  in the language you happen to be checking. `check:docs-parity` fails when a
+  version, path, package specifier, or link appears in only one of a pair.
 - Palette changes should include demo screenshots (both dark and light).
 
 ## Releasing

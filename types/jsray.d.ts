@@ -11,6 +11,14 @@ declare namespace JSRay {
     pattern: RegExp;
     inside?: GrammarRule[];
     lookbehind?: boolean;
+    /**
+     * For forms whose end is not knowable when the rule is written — a
+     * heredoc ends at the word its own opening line named, `%w[…]` at the
+     * bracket matching its opener. `pattern` matches the opening; this
+     * returns the index just past the end of the whole form, or -1 when no
+     * terminator is present, which leaves the opening to the rules behind it.
+     */
+    close?: (match: RegExpExecArray, text: string, from: number) => number;
   }
 
   type Grammar = GrammarRule[];

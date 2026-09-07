@@ -70,6 +70,14 @@ includes('docs/versioning.zh-CN.md', `当前版本:\`${version}\``);
 includes('docs/projects.md', 'JSRay Core');
 includes('docs/projects.zh-CN.md', 'JSRay Core');
 
+// The repository table's last column tells a reader what to install today, and
+// it is the one place in the docs that quotes a full npm specifier. A parity
+// check catches it going missing from one language; nothing catches both
+// languages naming the same stale release.
+for (const path of ['docs/projects.md', 'docs/projects.zh-CN.md']) {
+  includes(path, `@jsray/core@${version}`, `the installable specifier @jsray/core@${version}`);
+}
+
 // The supported-versions table is a promise to anyone deciding whether to
 // report privately. It sat on beta.1 through the whole beta.2 cycle.
 includes('SECURITY.md', `| ${version} | ✅`, `${version} in the supported-versions table`);

@@ -73,7 +73,8 @@ JSRay Core 是独立的 JavaScript 原生代码渲染内核。平台插件(包�
 
 ## npm 发布
 
-包以 [`@jsray/core`](https://www.npmjs.com/package/@jsray/core) 发布。无作用域的
+包以 [`@jsray/core`](https://www.npmjs.com/package/@jsray/core) 之名、从 `jsray`
+这个 npm 账号发布。无作用域的
 `jsray` 拿不到 —— npm 判定它与已有的 `js-ray` 过于相似而拒绝 —— 而 `@jsray`
 作用域的好处是一次性把整个家族(`@jsray/wp`、`@jsray/vscode`、`@jsray/terminal`)
 都占住。

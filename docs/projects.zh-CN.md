@@ -59,11 +59,20 @@ renderer.languages -> { [language]: label }
 
 Core 的变更通过拷贝或打包 `dist/` 资产流向插件仓库。插件的变更不应要求 Core 变更版本，除非它改动了 Core 的 API 或资产。
 
+**集成在自己发布时同步 Core，而不是 Core 一发布就同步。** 捆绑的副本追不上实时的
+Core：每个产物都冻结在它构建时的那份快照上 —— `.vsix`、插件 zip，以及 GitHub 为
+tag 附带的源码包，一概如此 —— 所以一个在 Core 发布当下就重新同步的仓库，对齐的只是
+自己的源码，用户装得到的东西一点没变。对齐是"发布"这个动作完成的事。
+
+因此 `tools/check-core-freshness.mjs` 日常只作提示、在打包关口才严格：两次发布之间
+落后会被报告出来，而陈旧的引擎打不出包（`--strict`，接在各集成的构建或打包脚本
+里）。唯一不该等下一个功能版的，是安全级别的 Core 发布 —— 为它单独切一次集成发布。
+
 ## 仓库拆分
 
-| 仓库 | 交付形态 | 许可 | 状态 |
+| 仓库 | 交付形态 | 许可 | 今天从哪里拿到 |
 |---|---|---|---|
-| `jsray` | npm `@jsray/core` | MIT | 已公开 |
+| `jsray` | npm `@jsray/core` | MIT | npm —— `@jsray/core@0.0.2-beta.3` |
 | `jsray-wp` | WordPress.org 插件 | GPLv2 or later | GitHub Release 的 zip |
 | `jsray-terminal` | npm CLI | MIT | GitHub —— `npm i -g github:jsrayorg/jsray-terminal` |
 | `jsray-vscode` | VS Code Marketplace | MIT | GitHub Release 的 `.vsix` |
