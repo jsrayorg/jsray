@@ -62,6 +62,8 @@ class Article:
 
 Recognizes PHP open tags, variables (`$name`), declaration names, class/interface names, keywords, common builtin functions, property access (`->name`, `::name`), strings, comments, and numbers.
 
+Heredocs and nowdocs (`<<<EOT`, `<<<'EOT'`) run from their opening line to the closing word, which may be indented and may carry a trailing `;`. A `//` or `#` inside the body is text, not a comment.
+
 ```php
 <?php
 function render_code($code) {
@@ -128,6 +130,8 @@ end
 Recognizes common keywords, class/type declarations, function declarations, function calls, property/member access, strings, comments, numbers, and constants. C-family grammars include preprocessor lines and annotations; Rust also recognizes macro calls such as `println!`.
 
 Multi-line and raw literals are matched whole rather than closing at the first inner quote: Java text blocks and C# raw strings (`"""`), C++ `R"tag(...)tag"`, and Rust `r#"..."#` — the last two carry a counted or named delimiter, so a quote inside the body does not end the literal. In Rust a leading apostrophe is read as a lifetime and typed as the type parameter it stands in for, not as the opening of a character literal.
+
+Ruby heredocs (`<<~SQL`, `<<-EOS`, `<<EOT`) run to the word their own opening line named, and open only on an uppercase word so that `items << thing` stays the append operator. Its percent literals — `%w[…]`, `%i(…)`, `%q{…}`, `%Q<…>` and the `%r{…}` regex — end at the delimiter matching the one that opened them, counting depth so an inner pair does not close the literal early.
 
 ```rust
 fn main() {
@@ -207,6 +211,9 @@ Recognizes:
 - 70+ common commands as builtin functions: `grep`, `git`, `npm`, `docker`, `kubectl`, ...
 - Variables: `$VAR`, `${VAR}`, `$@`, `$?`
 - Strings (double-quoted strings support `$` interpolation)
+- Heredocs: `<<EOF`, `<<-EOF` with an indented terminator, `<<'EOF'` without
+  interpolation. The body is one string through its closing word, and a
+  redirect on the opening line — `cat <<EOF > out.txt` — stays shell.
 - Command-line options `-x`, `--foo`
 
 ```bash
@@ -302,6 +309,8 @@ print(square(4))
 
 Recognizes POD doc blocks (`=head1 ... =cut`), `sub` declarations, `$scalar` / `@array` / `%hash` sigil variables, special variables (`$_`, `@ARGV`), regex binds (`=~ /.../`), and list builtins.
 
+The quoting operators `q{…}`, `qq{…}`, `qw(…)` and `qr{…}` end at the delimiter matching their opener, so a `#` inside one is text rather than a comment.
+
 ```perl
 use strict;
 my $name = "world";
@@ -327,6 +336,8 @@ function Get-Greeting { Write-Host "hi $Name" }
 **class**: `language-elixir` `language-ex` `language-exs`
 
 Recognizes `defmodule` / `def` / `defp` declarations, `:atoms`, module attributes (`@doc` colored as doc when followed by `"""`), capitalized module names, string interpolation `#{...}`, and the `|>` pipe.
+
+Sigils close on the delimiter matching their opener: `~s{…}`, `~w[…]`, and `~r//` as a regex. A `"` delimiter is left to the ordinary string rules, so that `~s"""…"""` is not cut at its second quote.
 
 ```elixir
 defmodule Greeter do
