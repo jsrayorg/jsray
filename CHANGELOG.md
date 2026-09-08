@@ -7,6 +7,12 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.0.2-beta.4] — 2026-09-09
+
+Five languages gain the literals they never had, by way of the one thing the
+rule format could not express: an end that is only knowable once the opening
+has been read.
+
 ### Added
 
 - **Literals whose end is decided at runtime.** A grammar rule may now carry
@@ -46,6 +52,12 @@ versioning follows [SemVer](https://semver.org/).
   headed 状态 and answered a different question than the English column, while
   the sentence under it explained the English one; and the versioning doc
   dropped the npm account the package publishes from.
+
+- **The per-language reference did not mention the new literals.** Nothing in
+  `docs/languages.md` was wrong; it understated, which on a page whose whole
+  job is "what does this handle" comes to the same thing. It is also the gap
+  `check:docs-parity` cannot see, because both translations were equally
+  silent.
 
 - **The roadmap described jsray-terminal as having a release.** It has none —
   the only way in is the GitHub install line. It also carried "syncing them to
