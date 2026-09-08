@@ -9,7 +9,7 @@
 
 [![npm](https://img.shields.io/npm/v/@jsray/core/beta?label=npm)](https://www.npmjs.com/package/@jsray/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.0.2--beta.3-lightgrey)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.0.2--beta.4-lightgrey)](CHANGELOG.md)
 [![Channel](https://img.shields.io/badge/channel-beta-blue)](docs/versioning.md)
 [![Zero deps](https://img.shields.io/badge/dependencies-0-success)](package.json)
 [![Size](https://img.shields.io/badge/dist-core%20js%20%2B%20css-lightgrey)](dist/)
@@ -45,7 +45,7 @@ JSRay.highlight('const x = 42;', 'js');
 `jsray.org/dist/` 始终提供当前发布版本。**线上站点如果你不会持续盯着,请改用锁定版本的地址** —— 每个发布版本都固化在自己的路径下,永不变动:
 
 ```html
-<script src="https://jsray.org/v/0.0.2-beta.3/jsray.js"></script>
+<script src="https://jsray.org/v/0.0.2-beta.4/jsray.js"></script>
 ```
 
 ### 校验你加载到的东西
@@ -55,7 +55,7 @@ JSRay.highlight('const x = 42;', 'js');
 哈希,浏览器在文件与发布内容不符时会直接拒绝执行:
 
 ```html
-<script src="https://jsray.org/v/0.0.2-beta.3/jsray.js"
+<script src="https://jsray.org/v/0.0.2-beta.4/jsray.js"
         integrity="sha256-…"
         crossorigin="anonymous"></script>
 ```
@@ -63,7 +63,7 @@ JSRay.highlight('const x = 42;', 'js');
 哈希就放在它所描述的文件旁边,格式与 SRI 完全一致:
 
 ```
-https://jsray.org/v/0.0.2-beta.3/integrity.json
+https://jsray.org/v/0.0.2-beta.4/integrity.json
 ```
 
 `crossorigin="anonymous"` 是必需的,不是可选:跨源脚本的 SRI 只有在加载走

@@ -32,7 +32,7 @@ declare namespace JSRay {
   /** A renderer-agnostic stream produced by `tokenize`. */
   type TokenStream = Array<string | Token>;
 
-  /** Runtime version string, matches version.json (e.g. "0.0.2-beta.3"). */
+  /** Runtime version string, matches version.json (e.g. "0.0.2-beta.4"). */
   const version: string;
 
   /** Grammars for every registered language, keyed by name and by alias. */

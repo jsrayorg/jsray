@@ -1990,7 +1990,7 @@
      * Runtime version, for shell/core compatibility negotiation.
      * Must match version.json — tools/check-versions.mjs asserts it.
      */
-    version: '0.0.2-beta.3',
+    version: '0.0.2-beta.4',
     languages: G,
     normalizeLanguage,
     detectLanguage,
