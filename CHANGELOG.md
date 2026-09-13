@@ -55,6 +55,12 @@ versioning follows [SemVer](https://semver.org/).
   one nested template and one level of braces, and each alternative inside it
   still begins with its own character, so the pattern has one parse.
 
+### Added
+
+- **Private class members** — `#count`, `this.#count`, `#count in obj` — are
+  coloured as properties. They were plain text, and the type rule split `#Foo`
+  at the word boundary, colouring `Foo` and leaving the `#` bare.
+
 ## [0.0.2-beta.4] — 2026-09-09
 
 Five languages gain the literals they never had, by way of the one thing the

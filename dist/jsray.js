@@ -345,6 +345,12 @@
       pattern: /(^|[=(,!&|?:;{}\[\]]\s*|\breturn\s*)\/(?![*\/])(?:\\.|\[(?:\\.|[^\]\\\n])*\]|[^\/\\\n])+\/[gimsuy]*/,
       lookbehind: true, group: 'span' },
 
+    // Private class members — `#count`, `this.#count`, `#count in obj`. The
+    // `#` belongs to the name, and the rule precedes the type and constant
+    // rules, which would otherwise take `#Foo` apart at the word boundary.
+    // A shebang's `#!` is not a name and is left alone.
+    { cls: 'tk-property', pattern: /#[A-Za-z_$][\w$]*/ },
+
     // Decorators
     { cls: 'tk-decorator', pattern: /@[A-Za-z_$][\w$]*/ },
 

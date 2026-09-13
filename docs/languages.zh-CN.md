@@ -19,7 +19,7 @@
 - 模板字符串 `` `...${id}...` ``，含 `${}` 内联高亮，包括占位符里再套一层模板串（`` `${ok ? `a ${b}` : 'c'}` ``）和一层花括号（`${fn({ a })}`）
 - 数字字面量含分隔符(`1_000_000`)、二/八/十六进制，以及 BigInt 后缀(`10n`)
 - 正则字面量 `/pattern/flags`，上下文敏感（前面是 `=` `(` `,` `return` 等才识别）
-- `ALL_CAPS` 常量、`.property` 访问、`@decorator`
+- `ALL_CAPS` 常量、`.property` 访问与私有成员（`#count`）、`@decorator`
 
 ```ts
 async function fetchUser(id: number): Promise<User> {

@@ -569,6 +569,15 @@ test('C family: preprocessor lines and annotations respect the spans around them
   token('@Override\nvoid f() {}', 'java', 'decorator', '@Override');
 });
 
+test('JavaScript: a private member keeps its #', () => {
+  token('class A { #count = 0; }', 'js', 'property', '#count');
+  token('this.#count++;', 'js', 'property', '#count');
+
+  const shebang = leaves(JSRay.tokenize('#!/usr/bin/env node\nx = 1', 'js'))
+    .filter((t) => t.type === 'tk-property');
+  assert.equal(shebang.length, 0, `a shebang was read as a member: ${JSON.stringify(shebang)}`);
+});
+
 test('SQL: an apostrophe in a comment does not open a string across lines', () => {
   // SQL strings may span lines, so the old order let `-- don't` open a literal
   // that ran on to the next apostrophe anywhere below it.
