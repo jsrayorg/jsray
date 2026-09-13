@@ -343,6 +343,12 @@ test('every new string form stays linear on pathological input', () => {
     ['php', '<<<EOT\n'.repeat(4000)],
     ['ruby', '%w[' .repeat(8000)],
     ['perl', 'q{'.repeat(8000)],
+    // A span group keeps one cursor per rule. Openers of several kinds that
+    // interleave and rarely close make every cursor search again, which is
+    // where a group pass that rescanned from the start would turn quadratic.
+    ['js', '"/* \'// `'.repeat(3000)],
+    ['php', '\'/* "# '.repeat(3000)],
+    ['ruby', '%w[ "# \''.repeat(3000)],
   ];
 
   for (const [lang, code] of shapes) {
@@ -451,4 +457,119 @@ test('Elixir: a sigil carries its own delimiters', () => {
   const code = 'c = ~s{hi # not comment}';
   token(code, 'elixir', 'string', '~s{hi # not comment}');
   notSwallowed(code, 'elixir', 'comment', 'not comment');
+});
+
+// ── Spans that compete by position ─────────────────────────────────────────
+// A string may hold a comment marker and a comment may hold a quote, in the
+// same grammar. No fixed rule order renders both, so these rules share a group
+// and whichever opens first wins. Before beta.5 every grammar had picked one of
+// the two failures: most read `// don't … won't` as a comment holding a string,
+// and the C family, JavaScript and PHP read "/* x */" as a string holding a
+// comment. The only test that touched this — Rust's `// don't do this` — held
+// a single apostrophe, which cannot open a string that needs a closing one.
+
+/** Every normalised language with a discoverable line comment, and its marker. */
+function lineCommentLanguages() {
+  const markers = ['//', '#', '--'];
+  const names = [...new Set(Object.keys(JSRay.languages).map((k) => JSRay.normalizeLanguage(k)))];
+  const found = [];
+  for (const lang of names) {
+    const marker = markers.find((m) =>
+      leaves(JSRay.tokenize(`${m} plain words`, lang)).some(
+        (t) => t.type === 'tk-comment' && t.text === `${m} plain words`
+      )
+    );
+    if (marker) found.push([lang, marker]);
+  }
+  return found;
+}
+
+test('A line comment holding two quotes is one comment, in every language', () => {
+  const langs = lineCommentLanguages();
+
+  // Discovery decides which languages are checked, so a grammar whose comment
+  // rule broke outright would silently drop out of this test. These must stay.
+  for (const must of ['javascript', 'python', 'php', 'shell', 'ruby', 'c', 'java', 'go',
+    'rust', 'sql', 'yaml', 'lua', 'perl', 'elixir', 'haskell', 'toml', 'jsonc']) {
+    assert.ok(langs.some(([l]) => l === must), `${must} has no discoverable line comment`);
+  }
+
+  for (const [lang, m] of langs) {
+    for (const body of ["don't stop, won't stop", 'say "hi" then "bye"']) {
+      const line = `${m} ${body}`;
+      token(`${line}\nx = 1`, lang, 'comment', line);
+    }
+  }
+});
+
+test('A string holding a comment marker is one string', () => {
+  for (const [lang, literal] of [
+    ['js', '"https://jsray.org"'], ['js', "'/* not a comment */'"], ['js', '"/** nor this */"'],
+    ['c', '"/* x */"'], ['cpp', '"// x"'], ['java', '"a // b"'], ['go', '"/* x */"'],
+    ['php', '"/* x */"'], ['php', "'# anchor'"], ['python', '"# not a comment"'],
+    ['shell', '"a # b"'], ['ruby', "'# x'"], ['sql', "'-- not a comment'"], ['lua', '"-- x"'],
+    ['yaml', '"a # b"'], ['r', '"# x"'], ['perl', '"# x"'], ['powershell', '"# x"'],
+    ['elixir', '"# x"'], ['toml', '"# x"'], ['dockerfile', '"# x"'],
+    ['jsonc', '"https://jsray.org"'],
+  ]) {
+    token(`x = ${literal};\n`, lang, 'string', literal);
+  }
+});
+
+test('JavaScript: a regex may hold a quote without opening a string', () => {
+  const code = 's.split(/"/); t = "u";';
+
+  token(code, 'js', 'regex', '/"/');
+  token(code, 'js', 'string', '"u"');
+});
+
+test('A literal named inside a comment opens nothing', () => {
+  // beta.4 put these rules ahead of the comment rule, so each comment lost
+  // everything from the literal onward.
+  token('# prefer %w[a b] over arrays\nx = 1', 'ruby', 'comment', '# prefer %w[a b] over arrays');
+  token('# wrap it in q{like this} here\nx = 1', 'perl', 'comment', '# wrap it in q{like this} here');
+  token('# match with ~r/abc/ first\nx = 1', 'elixir', 'comment', '# match with ~r/abc/ first');
+
+  // A heredoc opening written in a comment must not turn the lines below it
+  // into a string, even when a matching terminator happens to follow.
+  for (const [lang, code] of [
+    ['shell', '# pipe it: cat <<EOF\nx = 1\nEOF\n'],
+    ['ruby', '# builds <<~SQL like this\nx = 1\nSQL\n'],
+  ]) {
+    const strings = leaves(JSRay.tokenize(code, lang)).filter((t) => t.type === 'tk-string');
+    assert.equal(strings.length, 0, `[${lang}] a commented heredoc opened: ${JSON.stringify(strings)}`);
+  }
+});
+
+test('shell: a quoted redirect does not cost a heredoc its opening', () => {
+  // Measured from where its body starts, this heredoc would lose to "out.txt",
+  // which sits earlier on the opening line. Positions are compared where the
+  // whole match begins, lookbehind prefix included.
+  token('cat <<EOF > "out.txt"\nbody\nEOF\n', 'shell', 'string', 'body\nEOF');
+});
+
+test('JavaScript: a parameter list competes with the spans around it', () => {
+  // Ahead of the comments it would read a signature inside a doc comment as
+  // code; behind the strings it could not match a list holding a string default.
+  token('/** call function f(a, b) here */\nx = 1', 'js', 'doc', '/** call function f(a, b) here */');
+  token('function f(a, b = "x") {}', 'js', 'var-param', 'b');
+  token('function f(a /* why */, b) {}', 'js', 'comment', '/* why */');
+  token('function f(a /* why */, b) {}', 'js', 'var-param', 'b');
+  token('const g = (a = "x,y") => a;', 'js', 'string', '"x,y"');
+});
+
+test('C family: preprocessor lines and annotations respect the spans around them', () => {
+  token('/*\n#define X 1\n*/\nint y;', 'c', 'comment', '/*\n#define X 1\n*/');
+  token('#include "stdio.h"\nint y;', 'c', 'decorator', '#include "stdio.h"');
+  token('// see @Override\nint y;', 'java', 'comment', '// see @Override');
+  token('@Override\nvoid f() {}', 'java', 'decorator', '@Override');
+});
+
+test('SQL: an apostrophe in a comment does not open a string across lines', () => {
+  // SQL strings may span lines, so the old order let `-- don't` open a literal
+  // that ran on to the next apostrophe anywhere below it.
+  const code = "-- don't\nSELECT 'x' FROM t";
+
+  token(code, 'sql', 'comment', "-- don't");
+  token(code, 'sql', 'string', "'x'");
 });

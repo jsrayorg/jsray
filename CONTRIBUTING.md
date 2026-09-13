@@ -23,7 +23,12 @@ G.mylang = [
 ```
 
 Key points:
-- **Rule order determines priority.** Comments / strings always go first.
+- **Rule order determines priority — except among spans.** Comments, strings,
+  and anything else that opens a span (a regex literal, a heredoc) carry
+  `group: 'span'` and compete by position: whichever begins first owns the text
+  up to its own end, and listed order only breaks a tie at the same index.
+  Ordering them against each other cannot work — strings first breaks
+  `// don't … won't`, comments first breaks `"https://…"`.
 - **Declaration rules go before `keyword`** (otherwise `function`/`def`/`class` are consumed by the keyword rule first and the declaration name is never captured).
 - Use `lookbehind: true` with patterns like `(\bfunction\s+)` to mark a prefix; the prefix is consumed but not colored.
 - Use `inside: [...]` to re-apply a sub-grammar to captured text (parameter lists and template-string interpolations rely on this).

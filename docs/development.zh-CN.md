@@ -41,7 +41,7 @@ JSRay 生态的工程参考:全部官方仓库的架构、契约、约定与工�
 5. **主题运行时** —— `applyTheme(themeBlock, root)` 写入 `--jr-*` CSS 变量。默认目标是携带 `data-theme` 的元素(通常是 `<body>`):主题样式表通过 `[data-theme]` 选择器把同名变量定义在那里,写到祖先节点的内联变量会被遮蔽。
 6. **公开 API** —— `highlight`、`highlightElement`、`highlightAll`、`tokenize`、`render`、`applyTheme`、`detectLanguage`、`normalizeLanguage`、`languages`。UMD 式导出:CommonJS `module.exports` + `global.JSRay`。
 
-**语法规则顺序至关重要。** 字符串必须先于注释匹配(字符串里的 `#` 或 `//` 不能触发注释),声明规则先于关键字规则(否则 `function`/`def` 会吃掉声明名)。完整清单见 CONTRIBUTING.md。
+**语法规则顺序至关重要 —— 跨度类规则除外。** 注释、字符串以及其它会开启一段跨度的规则共用 `group: 'span'`,按起始位置竞争:字符串里的 `#` 或 `//` 保持为文本,注释里的引号保持为注释 —— 任何固定顺序都无法两边都对。其余规则仍按顺序定优先级:声明规则先于关键字规则(否则 `function`/`def` 会吃掉声明名)。完整清单见 CONTRIBUTING.md。
 
 ---
 

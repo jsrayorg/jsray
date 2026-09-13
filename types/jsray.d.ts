@@ -19,6 +19,13 @@ declare namespace JSRay {
      * terminator is present, which leaves the opening to the rules behind it.
      */
     close?: (match: RegExpExecArray, text: string, from: number) => number;
+    /**
+     * Adjacent rules carrying the same group compete by position instead of
+     * by order: at every step the match that begins earliest wins, and listed
+     * order only breaks a tie. This is how a comment may hold a quote and a
+     * string may hold a comment marker in the same grammar.
+     */
+    group?: string;
   }
 
   type Grammar = GrammarRule[];

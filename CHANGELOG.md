@@ -7,6 +7,38 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A comment may hold a quote, and a string a comment marker, in the same
+  grammar.** Rules ran one after another, and no order renders both: strings
+  first read `// don't stop, won't stop` as a comment holding the string
+  `'t stop, won'`; comments first read `"https://jsray.org"` as a string
+  holding a comment. Every grammar had picked one. Measured on beta.4, 27
+  grammars cut a line comment holding two quotes — JavaScript and TypeScript,
+  Python, PHP, shell, Ruby, SQL, YAML and the eleven C-family grammars among
+  them — and JavaScript, the C family and PHP read `"/* x */"` inside a string
+  as a comment. SQL fared worst: its strings may span lines, so `-- don't`
+  opened a literal that ran on to the next apostrophe anywhere below it.
+
+  A rule may now carry `group`, and adjacent rules sharing one compete by
+  position: whichever begins first owns the text to its own end, and listed
+  order only breaks a tie at the same index. Comments, strings, heredocs, regex
+  literals, JSON keys, C preprocessor lines and JavaScript parameter lists are
+  spans wherever they exist. The field is optional — `Grammar` is still
+  `GrammarRule[]`, and a rule without it behaves exactly as before.
+
+  Three forms added in beta.4 were part of the problem. Ruby's `%w[…]`, Perl's
+  `q{…}` and Elixir's `~r/…/` sat ahead of the comment rule, so
+  `# prefer %w[a b]` lost the rest of its comment; and a heredoc opening written
+  inside a comment, such as `# cat <<EOF`, turned the lines below it into a
+  string.
+
+  Found along the way, and fixed by the same change: a JavaScript regex holding
+  a quote — `s.split(/"/)` — opened a string that took the rest of the line; a
+  Java annotation named in a comment, `// see @Override`, cut the comment in
+  two; and JSONC read the `//` in `"https://…"`, which editor settings and
+  tsconfig files are full of, as the start of a comment.
+
 ## [0.0.2-beta.4] — 2026-09-09
 
 Five languages gain the literals they never had, by way of the one thing the

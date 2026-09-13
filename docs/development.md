@@ -72,9 +72,11 @@ code string ──tokenize(code, rules)──▶ token stream ──renderer─�
    `tokenize`, `render`, `applyTheme`, `detectLanguage`, `normalizeLanguage`,
    `languages`. UMD-ish export: CommonJS `module.exports` + `global.JSRay`.
 
-**Grammar rule ordering matters.** Strings must be matched before comments
-(a `#` or `//` inside a string must not start a comment), declaration rules
-before keyword rules (otherwise `function`/`def` consume the name).
+**Grammar rule ordering matters — except among spans.** Comments, strings and
+other span openers share `group: 'span'` and compete by position, so a `#` or
+`//` inside a string stays text and a quote inside a comment stays comment; no
+fixed order gets both right. Everywhere else order is priority: declaration
+rules before keyword rules (otherwise `function`/`def` consume the name).
 See CONTRIBUTING.md for the full checklist.
 
 ---
