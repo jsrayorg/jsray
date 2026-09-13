@@ -7,6 +7,13 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.0.2-beta.5] — 2026-09-13
+
+The last beta of the 0.0.2 line. Every grammar had picked one of two
+failures — a quote inside a comment, or a comment marker inside a string —
+because its rules ran in a fixed order; spans now compete by position instead.
+Also templates nested in placeholders, and private class members.
+
 ### Fixed
 
 - **A comment may hold a quote, and a string a comment marker, in the same

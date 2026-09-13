@@ -4,7 +4,7 @@
 
 JSRay Core uses single-project versioning. Platform plugins keep their own version files in their own repositories.
 
-Current version: `0.0.2-beta.4`
+Current version: `0.0.2-beta.5`
 Current channel: `beta`
 Public beta released: yes
 
@@ -33,7 +33,7 @@ The mechanics follow from that: `check:versions` requires the counter here, and
 `0.0.2`.
 
 ```
-0.0.1-beta.1 … 0.0.1-beta.5 → 0.0.2-beta.1 … 0.0.2-beta.4 → 0.0.3-beta.1 → … → 0.1.0
+0.0.1-beta.1 … 0.0.1-beta.5 → 0.0.2-beta.1 … 0.0.2-beta.5 → 0.0.3-beta.1 → … → 0.1.0
 ```
 
 The `0.0.1` line closed at beta.5. `0.1.0` is where the beta label comes off,

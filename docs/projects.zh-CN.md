@@ -72,7 +72,7 @@ tag 附带的源码包，一概如此 —— 所以一个在 Core 发布当下�
 
 | 仓库 | 交付形态 | 许可 | 今天从哪里拿到 |
 |---|---|---|---|
-| `jsray` | npm `@jsray/core` | MIT | npm —— `@jsray/core@0.0.2-beta.4` |
+| `jsray` | npm `@jsray/core` | MIT | npm —— `@jsray/core@0.0.2-beta.5` |
 | `jsray-wp` | WordPress.org 插件 | GPLv2 or later | GitHub Release 的 zip |
 | `jsray-terminal` | npm CLI | MIT | GitHub —— `npm i -g github:jsrayorg/jsray-terminal` |
 | `jsray-vscode` | VS Code Marketplace | MIT | GitHub Release 的 `.vsix` |
@@ -98,7 +98,7 @@ GPLv2 or later,因为 WordPress.org 的第一条指南接受任何 GPL 兼容许
   (`jsray.org/dist/jsray.js`、`jsray.org/dist/themes/<name>.css`)。这个路径每次
   发版都会变 —— 对演示页是对的，对没人盯着的站点是错的。
 - `https://jsray.org/v/<version>/`：同样的文件按版本固化
-  (`jsray.org/v/0.0.2-beta.4/jsray.js`)。锁定到这里的页面，今天怎么渲染，
+  (`jsray.org/v/0.0.2-beta.5/jsray.js`)。锁定到这里的页面，今天怎么渲染，
   以后还怎么渲染。
 
 `tools/build-site.sh` 两者都生成。Cloudflare 每次部署都会整体替换资产包，因此
