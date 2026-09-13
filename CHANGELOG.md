@@ -39,6 +39,22 @@ versioning follows [SemVer](https://semver.org/).
   two; and JSONC read the `//` in `"https://…"`, which editor settings and
   tsconfig files are full of, as the start of a comment.
 
+  Checked beyond the tests by rendering every JavaScript, PHP, shell, YAML and
+  CSS file in the four JSRay repositories, and each code block in their docs,
+  with beta.4 and with this build, and reading the differences by class. None
+  was a regression; beta.4 had three block comments swallowing code where this
+  build has none.
+
+- **A template placeholder may hold a template of its own.**
+  `` `${ok ? `a ${b}` : 'c'}` `` and `` `${items.map((x) => `<li>${x}</li>`)}` ``
+  ended the outer template at the inner one's closing backtick. That was wrong
+  before and survivable; once spans compete, the outer template's real closing
+  backtick opened a new template running to the next backtick in the file, and
+  everything between rendered inverted. jsray-terminal's own tests, which carry
+  a Python script in a template, were where it showed. A placeholder now admits
+  one nested template and one level of braces, and each alternative inside it
+  still begins with its own character, so the pattern has one parse.
+
 ## [0.0.2-beta.4] — 2026-09-09
 
 Five languages gain the literals they never had, by way of the one thing the

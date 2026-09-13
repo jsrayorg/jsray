@@ -312,11 +312,25 @@
     // engine try every combination: 26 placeholders took 8.7s to fail. Every
     // interpolating grammar below keeps its fallback and its interpolation
     // branch disjoint for the same reason.
-    { cls: 'tk-string',  pattern: /`(?:\\.|\$\{[^}]*\}|\$(?!\{)|[^`\\$])*`/, group: 'span', inside: [
-        { cls: 'tk-operator', pattern: /\$\{[^}]*\}/, inside: [
-            { cls: 'tk-punct', pattern: /^\$\{|\}$/ },
-            // No JS recursion here; minimal coloring avoids rule cross-talk
-            { cls: 'tk-var',   pattern: /[A-Za-z_$][\w$]*/ },
+    //
+    // A placeholder may hold a template of its own — `${ok ? `a ${b}` : 'c'}`
+    // and `${items.map((x) => `<li>${x}</li>`)}` are ordinary JavaScript — and
+    // one level of braces, as in `${fn({ a })}`. The old `\$\{[^}]*\}` stopped
+    // at the inner template's first `}`, so the outer template ended at the
+    // inner one's closing backtick and its own closing backtick was left over.
+    // Once spans compete by position, that leftover opens a template running
+    // to the next backtick in the file, and everything between reads inverted.
+    // Inside a placeholder each alternative still begins with its own
+    // character — a brace, a backtick, or neither — so there is one parse.
+    // The operator pattern below is the placeholder branch of this one.
+    { cls: 'tk-string',  pattern: /`(?:\\.|\$\{(?:[^{}`]|\{[^{}]*\}|`(?:\\.|\$\{[^{}]*\}|\$(?!\{)|[^`\\$])*`)*\}|\$(?!\{)|[^`\\$])*`/, group: 'span', inside: [
+        { cls: 'tk-operator', pattern: /\$\{(?:[^{}`]|\{[^{}]*\}|`(?:\\.|\$\{[^{}]*\}|\$(?!\{)|[^`\\$])*`)*\}/, inside: [
+            { cls: 'tk-punct',  pattern: /^\$\{|\}$/ },
+            // A nested template or a quoted string inside a placeholder is a
+            // string, not a run of variables. No JS recursion beyond that;
+            // minimal coloring avoids rule cross-talk.
+            { cls: 'tk-string', pattern: /`(?:\\.|\$\{[^{}]*\}|\$(?!\{)|[^`\\$])*`|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'/ },
+            { cls: 'tk-var',    pattern: /[A-Za-z_$][\w$]*/ },
         ]},
     ]},
     { cls: 'tk-string',  pattern: RX.string1, group: 'span' },

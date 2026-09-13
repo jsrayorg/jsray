@@ -16,7 +16,7 @@ Recognizes:
 - Parameter lists → `tk-var-param` (both `function name(a, b: T = 0)` and `(a, b) => ...`)
 - Builtin variables: `console`, `window`, `document`, `globalThis`, `Math`, `JSON`, ...
 - Builtin functions (as `.fn(` or `fn(`): `log`, `fetch`, `parseInt`, ...
-- Template strings `` `...${id}...` `` with inline `${}` interpolation highlighted
+- Template strings `` `...${id}...` `` with inline `${}` interpolation highlighted, including a template nested inside a placeholder (`` `${ok ? `a ${b}` : 'c'}` ``) and one level of braces (`${fn({ a })}`)
 - Regex literals `/pattern/flags`, context-sensitive (only after `=` `(` `,` `return`, etc.)
 - Numeric literals including separators (`1_000_000`), binary/octal/hex, and the BigInt suffix (`10n`)
 - `ALL_CAPS` constants, `.property` access, `@decorator`

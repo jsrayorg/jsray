@@ -349,6 +349,10 @@ test('every new string form stays linear on pathological input', () => {
     ['js', '"/* \'// `'.repeat(3000)],
     ['php', '\'/* "# '.repeat(3000)],
     ['ruby', '%w[ "# \''.repeat(3000)],
+    // A placeholder may now hold a template, which holds placeholders of its
+    // own. Openings that nest and never close are the shape to watch.
+    ['js', '`${ `${'.repeat(3000)],
+    ['js', '`a ${ {'.repeat(3000)],
   ];
 
   for (const [lang, code] of shapes) {
@@ -572,4 +576,19 @@ test('SQL: an apostrophe in a comment does not open a string across lines', () =
 
   token(code, 'sql', 'comment', "-- don't");
   token(code, 'sql', 'string', "'x'");
+});
+
+test('JavaScript: a placeholder may hold a template of its own', () => {
+  // Found in jsray-terminal's own tests, where a template carries a Python
+  // script and one of its placeholders a ternary between a template and a
+  // string. The outer template ended at the inner one's backtick; its real
+  // closing backtick then opened a template that inverted the rest of the file.
+  const code = 'const s = `a ${ok ? `b ${c}` : "d"} e`;\nconst after = 1;';
+
+  token(code, 'js', 'string', '`a ${ok ? `b ${c}` : "d"} e`');
+  notSwallowed(code, 'js', 'string', 'const after');
+
+  token('const u = `x ${fn({ a: 1 })} y`;', 'js', 'string', '`x ${fn({ a: 1 })} y`');
+  token('const h = `${items.map((x) => `<li>${x}</li>`).join("")}`;', 'js', 'string',
+    '`${items.map((x) => `<li>${x}</li>`).join("")}`');
 });
